@@ -6,37 +6,29 @@ use embedded_graphics::{
     pixelcolor::{raw::RawU16, Rgb565},
     prelude::*,
 };
-use embedded_hal::{
-    blocking::{delay::DelayUs, spi},
-    digital::v2::OutputPin,
-};
+use embedded_hal::{blocking::spi, digital::v2::OutputPin};
 
-pub trait DrawBatch<SPI, DC, RST, DELAY, T>
+pub trait DrawBatch<SPI, CSX, DC, RST, T, SPIE, PinE>
 where
-    SPI: spi::Write<u8>,
-    DC: OutputPin,
-    RST: OutputPin,
-    DELAY: DelayUs<u32>,
+    SPI: spi::Write<u8, Error = SPIE>,
+    CSX: OutputPin<Error = PinE>,
+    DC: OutputPin<Error = PinE>,
+    RST: OutputPin<Error = PinE>,
     T: IntoIterator<Item = Pixel<Rgb565>>,
 {
-    fn draw_batch(
-        &mut self,
-        item_pixels: T,
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>>;
+    fn draw_batch(&mut self, item_pixels: T) -> Result<(), Error<SPIE, PinE>>;
 }
 
-impl<SPI, DC, RST, DELAY, T> DrawBatch<SPI, DC, RST, DELAY, T> for ST7789<SPI, DC, RST, DELAY>
+impl<SPI, CSX, DC, RST, T, SPIE, PinE> DrawBatch<SPI, CSX, DC, RST, T, SPIE, PinE>
+    for ST7789<SPI, CSX, DC, RST>
 where
-    SPI: spi::Write<u8>,
-    DC: OutputPin,
-    RST: OutputPin,
-    DELAY: DelayUs<u32>,
+    SPI: spi::Write<u8, Error = SPIE>,
+    CSX: OutputPin<Error = PinE>,
+    DC: OutputPin<Error = PinE>,
+    RST: OutputPin<Error = PinE>,
     T: IntoIterator<Item = Pixel<Rgb565>>,
 {
-    fn draw_batch(
-        &mut self,
-        item_pixels: T,
-    ) -> Result<(), Error<SPI::Error, DC::Error, RST::Error>> {
+    fn draw_batch(&mut self, item_pixels: T) -> Result<(), Error<SPIE, PinE>> {
         //  Get the pixels for the item to be rendered.
         let pixels = item_pixels.into_iter();
         //  Batch the pixels into Pixel Rows.
